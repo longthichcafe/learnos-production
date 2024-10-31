@@ -5,7 +5,6 @@ exports.restrict = (req, res, next) => {
     const allowedOrigins = [
       "http://localhost:3000",
       "https://learnos-client.vercel.app",
-      process.env.CLIENT_URL,
     ];
     const allowedMethods = "GET, POST, PUT, DELETE, OPTIONS";
     const allowedHeaders = "x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization";
