@@ -4,7 +4,7 @@ exports.restrict = (req, res, next) => {
     // set the headers in variables to query for errors below
     const allowedOrigins = [
       "http://localhost:3000",
-      "https://learnos-client.vercel.app",
+      "http://learnos-client.vercel.app"
     ];
     const allowedMethods = "GET, POST, PUT, DELETE, OPTIONS";
     const allowedHeaders = "x-www-form-urlencoded, Origin, X-Requested-With, Content-Type, Accept, Authorization";
