@@ -63,16 +63,16 @@ class BreakingTaskController {
         this.chatHistory = []; // Reset chat history
     
         let finalPrompt;
-        const SYSTEM = `You are a helpful assistant designed to break down student assignments into simple, manageable steps. You must only return the exact JSON format.`;
+        const SYSTEM = `You are a helpful assistant designed to break down student assignments into simple, manageable steps. You must only return the exact JSON format like ${json_format} without any additional text or explanation.`;
     
         if (fileBuffer) {
             const fileContent = await this._extractTextFromFile(fileBuffer, fileName);
             if (!fileContent) {
                 return 'Error: Unable to extract text from the file. Please check if the file format is supported.';
             }
-            finalPrompt = `Here's the assignment description:\n\n${fileContent}\n\nBreak down this assignment into simple, manageable steps in JSON format with "title" and "description" keys.`;
+            finalPrompt = `Here's the assignment description:\n\n${fileContent}\n\nBreak down this assignment into simple, manageable steps, and return the result in json format. The json should contain the "title" and "description" of each step.`;
         } else if (prompt) {
-            finalPrompt = `Here's the assignment description:\n\n${prompt}\n\nBreak down this assignment into JSON format with "title" and "description" keys.`;
+            finalPrompt = `Here's the assignment description:\n\n${prompt}\n\nBreak down this assignment into simple, manageable steps, and return the result in json format. The json should contain the "title" and "description" of each step.`;
         } else {
             throw new Error('Either prompt or file must be provided.');
         }
