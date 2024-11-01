@@ -31,22 +31,21 @@ class BreakingTaskController {
         this.lastRequestTime = Date.now();
     }
 
-    async _extractTextFromFile(file) {
-        const fileExtension = path.extname(file.originalname).toLowerCase();
+    async _extractTextFromFile(fileBuffer, fileName) {
+        const fileExtension = path.extname(fileName).toLowerCase();
         let text = '';
-
+    
         try {
             switch (fileExtension) {
                 case '.txt':
-                    text = await fs.readFile(file.path, 'utf-8');
+                    text = fileBuffer.toString('utf-8'); // Decode buffer to text
                     break;
                 case '.pdf':
-                    const pdfData = await fs.readFile(file.path);
-                    const pdfContent = await pdf(pdfData);
+                    const pdfContent = await pdf(fileBuffer); // Process PDF buffer
                     text = pdfContent.text;
                     break;
                 case '.docx':
-                    const result = await mammoth.extractRawText({ path: file.path });
+                    const result = await mammoth.extractRawText({ buffer: fileBuffer });
                     text = result.value;
                     break;
                 default:
@@ -59,29 +58,21 @@ class BreakingTaskController {
         return text;
     }
 
-    async breakDownTask(prompt = null, file = null, maxTokens = 500, retryCount = 0) {
+    async breakDownTask(prompt = null, fileBuffer = null, fileName = '', maxTokens = 500, retryCount = 0) {
         await this._rateLimit();
-        this.chatHistory = [];
-
+        this.chatHistory = []; // Reset chat history
+    
         let finalPrompt;
-        const json_format = {
-            "task":
-                {
-                    "title": "",
-                    "description": ""
-                }
-        };
-
-        const SYSTEM = `You are a helpful assistant designed to break down student assignments into simple, manageable steps. You must only return the exact JSON format like ${json_format} without any additional text or explanation.`
-
-        if (file) {
-            const fileContent = await this._extractTextFromFile(file);
-            if (fileContent === null) {
+        const SYSTEM = `You are a helpful assistant designed to break down student assignments into simple, manageable steps. You must only return the exact JSON format.`;
+    
+        if (fileBuffer) {
+            const fileContent = await this._extractTextFromFile(fileBuffer, fileName);
+            if (!fileContent) {
                 return 'Error: Unable to extract text from the file. Please check if the file format is supported.';
             }
-            finalPrompt = `Here's the assignment description:\n\n${fileContent}\n\nBreak down this assignment into simple, manageable steps, and return the result in json format. The json should contain the "title" and "description" of each step.`;
+            finalPrompt = `Here's the assignment description:\n\n${fileContent}\n\nBreak down this assignment into simple, manageable steps in JSON format with "title" and "description" keys.`;
         } else if (prompt) {
-            finalPrompt = `Here's the assignment description:\n\n${prompt}\n\nBreak down this assignment into simple, manageable steps, and return the result in json format. The json should contain the "title" and "description" of each step.`;
+            finalPrompt = `Here's the assignment description:\n\n${prompt}\n\nBreak down this assignment into JSON format with "title" and "description" keys.`;
         } else {
             throw new Error('Either prompt or file must be provided.');
         }
@@ -165,7 +156,7 @@ class BreakingTaskController {
 
                 // Add the new message to the chat history
                 // this.chatHistory.push({ role: 'assistant', content: text });
-                console.log(jsonObject)
+                // console.log(jsonObject)
                 return jsonObject;
             } else {
                 if (retryCount < this.maxRetries) {
@@ -182,12 +173,14 @@ class BreakingTaskController {
     // Main method to handle request and response
     async breakdown(req, res) {
         try {
-            const prompt = req.body.prompt;
-            const file = req.file;
-            const result = await this.breakDownTask(prompt, file);
+            const fileBuffer = req.file ? req.file.buffer : null;
+            const fileName = req.file ? req.file.originalname : '';
+            const prompt = req.body.prompt || '';
+    
+            const result = await this.breakDownTask(prompt, fileBuffer, fileName);
             res.json({ result });
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error processing task:', error);
             res.status(500).json({ error: 'Error processing the request.' });
         }
     }
@@ -196,7 +189,7 @@ class BreakingTaskController {
     async breakdownSubtask(req, res) {
         try {
             const subtask = req.body.step;
-            console.log('Subtask:', subtask);
+            // console.log('Subtask:', subtask);
             const result = await this.breakSubTask(subtask);
             res.json({ result });
         } catch (error) {
