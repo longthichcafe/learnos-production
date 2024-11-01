@@ -61,6 +61,14 @@ class BreakingTaskController {
     async breakDownTask(prompt = null, fileBuffer = null, fileName = '', maxTokens = 500, retryCount = 0) {
         await this._rateLimit();
         this.chatHistory = []; // Reset chat history
+
+        const json_format = {
+            "task":
+                {
+                    "title": "",
+                    "description": ""
+                }
+        };
     
         let finalPrompt;
         const SYSTEM = `You are a helpful assistant designed to break down student assignments into simple, manageable steps. You must only return the exact JSON format like ${json_format} without any additional text or explanation.`;
